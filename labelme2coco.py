@@ -12,6 +12,7 @@ from sklearn.model_selection import train_test_split
 
 class Labelme2coco:
     def __init__(self, args):
+        self.classname = args.class_name
         self.classname_to_id = {args.class_name: 1}
         self.images = []
         self.annotations = []
@@ -63,13 +64,8 @@ class Labelme2coco:
 
     def _annotation(self, bboxes_list, keypoints_list, json_path):
         if len(keypoints_list) != args.join_num * len(bboxes_list):
-            print(
-                "you loss {} keypoint(s) with file {}".format(
-                    args.join_num * len(bboxes_list) - len(keypoints_list), json_path
-                )
-            )
-            print("Please check ！！！")
-            sys.exit()
+            raise Exception(f"no enough kpts for {json_path}, skip this sample.")
+
         i = 0
         for object in bboxes_list:
             annotation = {}
@@ -119,7 +115,8 @@ class Labelme2coco:
 
         for json_path in tqdm(json_path_list):
             obj = self.read_jsonfile(json_path)
-            self.images.append(self._image(obj, json_path))
+            img = self._image(obj, json_path)
+            self.images.append(img)
             shapes = obj["shapes"]
 
             bboxes_list, keypoints_list = [], []
@@ -129,7 +126,18 @@ class Labelme2coco:
                 elif shape["shape_type"] == "point":
                     keypoints_list.append(shape)
 
-            self._annotation(bboxes_list, keypoints_list, json_path)
+            # if no bbox.
+            if len(bboxes_list) == 0:
+                bboxes_list.append(
+                    dict(
+                        label=self.classname,
+                        points=[[0, 0], [img["width"], img["height"]]],
+                    )
+                )
+            try:
+                self._annotation(bboxes_list, keypoints_list, json_path)
+            except Exception as e:
+                print(e)
 
         keypoints = {}
         keypoints["info"] = {
@@ -192,10 +200,10 @@ if __name__ == "__main__":
         train_keypoints, "%scoco/annotations/keypoints_train.json" % saved_coco_path
     )
     for file in train_path:
-        shutil.copy(file.replace("json", "jpg"), "%scoco/train/" % saved_coco_path)
+        shutil.copy(file.replace("json", "png"), "%scoco/train/" % saved_coco_path)
     for file in val_path:
-        shutil.copy(file.replace("json", "jpg"), "%scoco/val/" % saved_coco_path)
-    #
+        shutil.copy(file.replace("json", "png"), "%scoco/val/" % saved_coco_path)
+
     l2c_val = Labelme2coco(args)
     val_instance = l2c_val.to_coco(val_path)
     l2c_val.save_coco_json(
