@@ -1,5 +1,4 @@
 import os
-import sys
 import glob
 import json
 import shutil
@@ -77,10 +76,11 @@ class Labelme2coco:
             annotation["id"] = self.ann_id
             annotation["image_id"] = self.img_id
             annotation["category_id"] = int(self.classname_to_id[label])
-            annotation["iscrowd"] = 0
+            # annotation["iscrowd"] = 0
             annotation["area"] = 1.0
-            annotation["segmentation"] = [np.asarray(bbox).flatten().tolist()]
+            # annotation["segmentation"] = [np.asarray(bbox).flatten().tolist()]
             annotation["bbox"] = self._get_box(bbox)
+            annotation["bbox_mode"] = 0  # XYXY_ABS
 
             for keypoint in keypoints_list[i * args.join_num : (i + 1) * args.join_num]:
                 point = keypoint["points"]
@@ -100,13 +100,7 @@ class Labelme2coco:
             category["supercategory"] = name
             category["id"] = id
             category["name"] = name
-            category["keypoint"] = [
-                "left_top",
-                "right_top",
-                "right_bottom",
-                "left_bottom",
-            ]
-            # category['keypoint'] = [str(i + 1) for i in range(args.join_num)]
+            category["keypoints"] = [str(i + 1) for i in range(args.join_num)]
 
             self.categories.append(category)
 
@@ -200,9 +194,9 @@ if __name__ == "__main__":
         train_keypoints, "%scoco/annotations/keypoints_train.json" % saved_coco_path
     )
     for file in train_path:
-        shutil.copy(file.replace("json", "png"), "%scoco/train/" % saved_coco_path)
+        shutil.copy(file.replace("json", "jpg"), "%scoco/train/" % saved_coco_path)
     for file in val_path:
-        shutil.copy(file.replace("json", "png"), "%scoco/val/" % saved_coco_path)
+        shutil.copy(file.replace("json", "jpg"), "%scoco/val/" % saved_coco_path)
 
     l2c_val = Labelme2coco(args)
     val_instance = l2c_val.to_coco(val_path)
