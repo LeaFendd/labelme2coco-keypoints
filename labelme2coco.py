@@ -76,7 +76,7 @@ class Labelme2coco:
             annotation["id"] = self.ann_id
             annotation["image_id"] = self.img_id
             annotation["category_id"] = int(self.classname_to_id[label])
-            # annotation["iscrowd"] = 0
+            annotation["iscrowd"] = 0
             annotation["area"] = 1.0
             # annotation["segmentation"] = [np.asarray(bbox).flatten().tolist()]
             annotation["bbox"] = self._get_box(bbox)
@@ -149,23 +149,23 @@ class Labelme2coco:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--class_name", "--n", help="class name", type=str, required=True
+        "--class_name", "-n", help="class name", type=str, required=True
     )
     parser.add_argument(
-        "--input", "--i", help="json file path (labelme)", type=str, required=True
+        "--input", "-i", help="json file path (labelme)", type=str, required=True
     )
     parser.add_argument(
         "--output",
-        "--o",
+        "-o",
         help="output file path (coco format)",
         type=str,
         required=True,
     )
     parser.add_argument(
-        "--join_num", "--j", help="number of join", type=int, required=True
+        "--join_num", "-j", help="number of keypoints", type=int, required=True
     )
     parser.add_argument(
-        "--ratio", "--r", help="train and test split ratio", type=float, default=0.12
+        "--ratio", "-r", help="train and test split ratio", type=float, default=0.12
     )
     args = parser.parse_args()
 
